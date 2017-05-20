@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const config = require('./models/config');
 
 const auth = require('./controllers/auth');
+const groups = require('./controllers/groups');
 
 // http://mongoosejs.com/docs/promises.html
 mongoose.Promise = global.Promise;
