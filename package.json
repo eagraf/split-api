@@ -1,0 +1,22 @@
+{
+  "name": "split-api",
+  "version": "0.0.0",
+  "author": "Ethan Graf <graf.ethan@gmail.com>, Ivan Vegner",
+  "private": true,
+  "scripts": {
+    "build": "npm install",
+    "start": "node split-api.js",
+    "dev": "mongod -f models/mongod.conf & node split-api.js",
+    "mongo-kill": "killall mongod"
+  },
+  "dependencies": {
+    "bcrypt-nodejs": "0.0.3",
+    "body-parser": "~1.13.2",
+    "debug": "~2.2.0",
+    "email-validator": "^1.0.7",
+    "express": "~4.13.1",
+    "jwt-simple": "^0.5.1",
+    "mongoose": "^4.7.6",
+    "morgan": "~1.6.1"
+  }
+}
