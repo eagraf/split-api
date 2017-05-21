@@ -1,10 +1,13 @@
 const mongoose = require('mongoose');
 const haversineOffset = require('haversine-offset');
+const shuffle = require('shuffle-array');
 const Game = require('../models/schemas/game');
 const User = require('../models/schemas/user');
 
+var numKeys = 50;
 
-// POST /game {name, users:[user1, user2, user3]}
+
+// POST /game {name}
 exports.makeGame = (req, res, next) => {
 
     var gameData = {};
@@ -22,7 +25,7 @@ function tryCode(res, gameData) {
     var newGame = new Game(gameData);
     newGame.save((err, game) => {
         if (!err) return res.json(game);
-        if (err.code == 11000) tryCode();
+        if (err.code == 11000) tryCode(res, gameData);
     });
 }
 
@@ -47,42 +50,65 @@ exports.getGame = (req, res, next) => {
 exports.startGame = (req, res, next) => {
 
     var id = req.params.id;
+    console.log(req.body);
 
     Game.findById(id, (err, game) => {
         if (err) return next(err);
         if (!game) return res.status(404).send('Game not found');
 
-        var numUsers = game.users.length;
-        console.log(numUsers);
-         
-        console.log(req.body.radius + ", " + typeof req.body.radius);
-        if (!req.body.radius || typeof req.body.radius !== 'number')
-            return res.status(400).send('Must provide a radius');
-        if (!req.body.lat || typeof req.body.lat !== 'number')
-            return res.status(400).send('Must provide latitude');
-        if (!req.body.lng || typeof req.body.lng !== 'number')
-            return res.status(400).send('Must provide longitude');
+        if (!game.started){
 
-        var radius = req.body.radius;
-        var latlng = {lat: req.body.lat, lng: req.body.lng};
-        
-        // Determine beacons
-        var beacons = generateBeacons(5, radius, latlng);
-        console.log(beacons);
-        
-        // Determine code start points
-        
+            if (!req.body.radius || typeof req.body.radius !== 'number')
+                return res.status(400).send('Must provide a radius');
+            if (!req.body.lat || typeof req.body.lat !== 'number')
+                return res.status(400).send('Must provide latitude');
+            if (!req.body.lng || typeof req.body.lng !== 'number')
+                return res.status(400).send('Must provide longitude');
 
-        Game.findByIdAndUpdate(id, {beacons: beacons}, (err, game) => {
-            if (err) return next(err);
-            if (!game) return res.status(400).send('Failed to start game');
+            var radius = req.body.radius;
+            var latlng = {lat: req.body.lat, lng: req.body.lng};
+            var numUsers = game.users.length;
+            var numMafia = Math.round(numUsers/3);
+            var numGood = numUsers - numMafia;
 
-            return res.json(game);
-        });
+            // Determine beacons
+            var beacons = generateBeacons(numUsers, radius, latlng);
+
+            // Determine code start points
+            var key = generateKey(numGood);
+
+            // [{code: 12, location: {lat:lat, lng:lng}, ...]
+            var userCodes = generateUserCodes(key, numGood, radius, latlng);
+
+            // Assign mafia roles. Maf _initially_ get a random code
+            var mafAssign = [];
+            var users = game.users;
+            for (var i = 0; i < numMafia; i++) {
+                mafAssign.push({mafStatus: true, code: userCodes[getRandInt(0, numGood)]});
+            }
+            for (var i = 0; i < numGood; i++) {
+                mafAssign.push({mafStatus: false, code: userCodes[i]});
+            }
+            shuffle(mafAssign);
+
+            for (var i = 0; i < numUsers; i++) {
+                var userInfo = mafAssign[i];
+                users[i].mafia = userInfo.mafStatus;
+                users[i].code = userInfo.code; 
+            }
+            
+            gameUpdate = {beacons: beacons, started: true, 
+                          users: users, key: key}
+            Game.findByIdAndUpdate(id, gameUpdate, (err, game) => {
+                if (err) return next(err);
+                if (!game) return res.status(400).send('Failed to start game');
+
+                return res.json(game);
+            });
+        }
+        else return res.status(400).send('Game already started.');
         
         //TODO Send Notifications
-
-
      });
 };
 
@@ -94,6 +120,31 @@ function generateBeacons(num, radius, latlng) {
     }
 
     return beacons;
+}
+
+function generateKey (numGood) {
+    var key = [];
+    for(var i = 0; i < numGood; i++){
+        // Random integer key between 0 and numKeys
+        k = {code: getRandInt(0, numKeys)}
+        key.push(k);
+    }
+
+    shuffle(key);
+
+    for(var i = 0; i < numGood; i++){
+        key[i].location = i;
+    }
+
+    return key;
+}
+
+function generateUserCodes (key, numGood, radius, latlng) {
+    var codes = key;
+    for(var i = 0; i < numGood; i++){
+        codes[i].location = mkPointInRadius(radius, latlng)
+    }
+    return codes;
 }
 
 // PUT /game/:id/users {name, device_id}
@@ -130,4 +181,7 @@ function getRandDist(min, max) {
     return Math.random() * (max - min) + min;
 }
 
+function getRandInt(min, max) {
+    return Math.floor(getRandDist(0, getRandDist(min, max)));
+}
 

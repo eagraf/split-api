@@ -18,6 +18,7 @@
     "haversine-offset": "^1.0.0",
     "jwt-simple": "^0.5.1",
     "mongoose": "^4.7.6",
-    "morgan": "~1.6.1"
+    "morgan": "~1.6.1",
+    "shuffle-array": "^1.0.1"
   }
 }

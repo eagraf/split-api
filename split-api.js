@@ -68,9 +68,9 @@ app.use(function(err, req, res, next) {
     res.status(err.status || 500).send();
 });
 
-var server = app.listen(config.port, function() {
-    console.log('Listening at http://localhost:%s in %s mode',
-    server.address().port, app.get('env'));
+var server = app.listen(config.port, config.host, function() {
+    console.log('Listening at http://%s:%s in %s mode',
+    server.address().host, server.address().port, app.get('env'));
 });
 
 module.exports = app;
