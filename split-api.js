@@ -39,9 +39,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 // User routes
 router.route('/games')
     .post(game.makeGame)
-    .put(game.startGame)
 router.route('/games/:id')
     .get(game.getGame)
+    .put(game.startGame)
 router.route('/games/join/:joinCode')
     .put(game.addUser)
 

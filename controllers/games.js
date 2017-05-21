@@ -45,22 +45,52 @@ exports.getGame = (req, res, next) => {
 };
 
 exports.startGame = (req, res, next) => {
-    // Determine beacons
-    
-    // Determine code start points
 
-    
-    //TODO Send Notifications
+    var id = req.params.id;
+
+    Game.findById(id, (err, game) => {
+        if (err) return next(err);
+        if (!game) return res.status(404).send('Game not found');
+
+        var numUsers = game.users.length;
+        console.log(numUsers);
+         
+        console.log(req.body.radius + ", " + typeof req.body.radius);
+        if (!req.body.radius || typeof req.body.radius !== 'number')
+            return res.status(400).send('Must provide a radius');
+        if (!req.body.lat || typeof req.body.lat !== 'number')
+            return res.status(400).send('Must provide latitude');
+        if (!req.body.lng || typeof req.body.lng !== 'number')
+            return res.status(400).send('Must provide longitude');
+
+        var radius = req.body.radius;
+        var latlng = {lat: req.body.lat, lng: req.body.lng};
+        
+        // Determine beacons
+        var beacons = generateBeacons(5, radius, latlng);
+        console.log(beacons);
+        
+        // Determine code start points
+        
+
+        Game.findByIdAndUpdate(id, {beacons: beacons}, (err, game) => {
+            if (err) return next(err);
+            if (!game) return res.status(400).send('Failed to start game');
+
+            return res.json(game);
+        });
+        
+        //TODO Send Notifications
 
 
-    return res.send(200);
+     });
 };
 
 
-function generateBeacons(num, radius, lat, lng) {
+function generateBeacons(num, radius, latlng) {
     var beacons = [];
     for (var i = 0; i < num; i++) {
-        beacons.push(mkPointinRadius(radius, {lat, lng}));
+        beacons.push(mkPointInRadius(radius, latlng));
     }
 
     return beacons;
