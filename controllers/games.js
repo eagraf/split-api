@@ -17,3 +17,13 @@ exports.updateGame = (req, res, next) => {
 exports.getGame = (req, res, next) => {
     return res.send(200);
 };
+
+exports.startGame = (req, res, next) => {
+    return res.send(200);
+};
+
+exports.addUser = (req, res, next) => {
+    return res.send(200);
+};
+
+
