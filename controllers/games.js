@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
+const haversineOffset = require('haversine-offset');
 const Game = require('../models/schemas/game');
 const User = require('../models/schemas/user');
+
 
 // POST /game {name, users:[user1, user2, user3]}
 exports.makeGame = (req, res, next) => {
@@ -34,7 +36,7 @@ exports.updateGame = (req, res, next) => {
 
 // GET /game/:id
 exports.getGame = (req, res, next) => {
-    game = Game.findById(req.params('id'), (err, game) => {
+    game = Game.findById(req.params.id, (err, game) => {
         if (err) return next(err);
         if (!game) return res.status(401).send('No game with that id');
 
@@ -54,21 +56,29 @@ exports.startGame = (req, res, next) => {
     return res.send(200);
 };
 
-// PUT /game/:id/users {name, device_id}
-exports.addUser = (req, res, next) => {
-    game = Game.findById(req.params('id'), (err, game) => {
-        if (err) return next(err);
-        if (!game) return res.status(401).send('No game with that id');
+// Generates {lat, lng} point within radius of a center {lat, lng}
+function mkPointInRadius (radius, center) {
+    var offset = {x: radius, y: radius};
+    return haversineOffset(center, offset);
+}
 
-        user = new User({name: req.params('name'), 
-                         device_id: req.params('device_id')});
+// PUT /game/:id/users {name, deviceId}
+exports.addUser = (req, res, next) => {
+    game = Game.findOne({joinCode: req.params.joinCode}, (err, game) => {
+        if (err) return next(err);
+        if (!game) return res.status(401).send('No game with that join code');
+
+        user = new User({name: req.body.name, 
+                         deviceId: req.body.deviceId});
         user.validate(function (err) {
             if(err) return next(err);
-        });
-        game.users.push(user);
-        game.save(function (err, user, _) {
-            if (err) return next(err);
-            res.status(200).json(user);
+
+            game.users.push(user);
+            game.save(function (err, user, _) {
+                if (err) return next(err);
+                res.status(200).json(user);
+            });
+
         });
     });
 };

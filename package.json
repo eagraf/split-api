@@ -15,6 +15,7 @@
     "debug": "~2.2.0",
     "email-validator": "^1.0.7",
     "express": "~4.13.1",
+    "haversine-offset": "^1.0.0",
     "jwt-simple": "^0.5.1",
     "mongoose": "^4.7.6",
     "morgan": "~1.6.1"
