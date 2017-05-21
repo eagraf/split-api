@@ -4,17 +4,8 @@ const bcrypt = require('bcrypt-nodejs');
 const validator = require('email-validator');
 
 var userSchema = new Schema({
-        username: {type: String, required: true, trim: true, sparse: true},
-        email: {type: String, trim: true, required: true, unique: true, sparse: true},
-        hash: {type: String, required: true},
+        name: {type: String, required: true},
     },
-    {
-        toObject: {getters: true},
-        timestamps: {
-            createdAt: 'createdDate',
-            updatedAt: 'updatedDate'
-        }
-    }
 );
 
 
