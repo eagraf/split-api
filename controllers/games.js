@@ -1,5 +1,6 @@
-const Game = require('../models/schemas/game');
 const mongoose = require('mongoose');
+const Game = require('../models/schemas/game');
+const User = require('../models/schemas/user');
 
 // POST /game {name, users:[user1, user2, user3]}
 exports.makeGame = (req, res, next) => {
@@ -13,17 +14,37 @@ exports.updateGame = (req, res, next) => {
 
 //exports.deleteGame
 
-// GET /game/<game_id> 
+// GET /game/:id
 exports.getGame = (req, res, next) => {
-    return res.send(200);
+    game = Game.findById(req.params('id'), (err, game) => {
+        if (err) return next(err);
+        if (!game) return res.status(401).send('No game with that id');
+
+        res.status(200).json(game);
+    });
 };
 
 exports.startGame = (req, res, next) => {
     return res.send(200);
 };
 
+// PUT /game/:id/users {name, device_id}
 exports.addUser = (req, res, next) => {
-    return res.send(200);
+    game = Game.findById(req.params('id'), (err, game) => {
+        if (err) return next(err);
+        if (!game) return res.status(401).send('No game with that id');
+
+        user = new User({name: req.params('name'), 
+                         device_id: req.params('device_id')});
+        user.validate(function (err) {
+            if(err) return next(err);
+        });
+        game.users.push(user);
+        game.save(function (err, user, _) {
+            if (err) return next(err);
+            res.status(200).json(user);
+        });
+    });
 };
 
 

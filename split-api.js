@@ -43,7 +43,7 @@ router.route('/games')
 router.route('/games/:id')
     .get(game.getGame)
 router.route('/games/:id/users')
-    .post(game.addUser)
+    .put(game.addUser)
 
     
 app.use('/', router);

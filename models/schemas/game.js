@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
+const User = require('./user');
 const Schema = mongoose.Schema;
 
 var gameSchema = new Schema({
         name: {type: String, required: true, trim: true},
-        users: {type: [Schema.objectId], required: true, ref: User},
+        users: {},
         startTime: {type: Date}
     },
     {
@@ -14,10 +15,6 @@ var gameSchema = new Schema({
         }
     }
 );
-
-var User = mongoose.model('User', new Schema({
-    name: {type: String, required: true, trim: true}
-}));
 
 var Game = mongoose.model('Game', gameSchema);
 
