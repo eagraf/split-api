@@ -42,7 +42,7 @@ router.route('/games')
     .put(game.startGame)
 router.route('/games/:id')
     .get(game.getGame)
-router.route('/games/:id/users')
+router.route('/games/join/:joinCode')
     .put(game.addUser)
 
     
