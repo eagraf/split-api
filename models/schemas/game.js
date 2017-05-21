@@ -10,6 +10,7 @@ var gameSchema = new Schema({
             lng: Number
         }],
         users: [{}],
+        started: false,
         startTime: {type: Date}
     },
     {

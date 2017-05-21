@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const haversineOffset = require('haversine-offset');
+const shuffle = require('shuffle-array');
 const Game = require('../models/schemas/game');
 const User = require('../models/schemas/user');
 
@@ -47,42 +48,58 @@ exports.getGame = (req, res, next) => {
 exports.startGame = (req, res, next) => {
 
     var id = req.params.id;
+    console.log(req.body);
 
     Game.findById(id, (err, game) => {
         if (err) return next(err);
         if (!game) return res.status(404).send('Game not found');
 
-        var numUsers = game.users.length;
-        console.log(numUsers);
-         
-        console.log(req.body.radius + ", " + typeof req.body.radius);
-        if (!req.body.radius || typeof req.body.radius !== 'number')
-            return res.status(400).send('Must provide a radius');
-        if (!req.body.lat || typeof req.body.lat !== 'number')
-            return res.status(400).send('Must provide latitude');
-        if (!req.body.lng || typeof req.body.lng !== 'number')
-            return res.status(400).send('Must provide longitude');
+        if (!game.started){
 
-        var radius = req.body.radius;
-        var latlng = {lat: req.body.lat, lng: req.body.lng};
-        
-        // Determine beacons
-        var beacons = generateBeacons(5, radius, latlng);
-        console.log(beacons);
-        
-        // Determine code start points
-        
+            if (!req.body.radius || typeof req.body.radius !== 'number')
+                return res.status(400).send('Must provide a radius');
+            if (!req.body.lat || typeof req.body.lat !== 'number')
+                return res.status(400).send('Must provide latitude');
+            if (!req.body.lng || typeof req.body.lng !== 'number')
+                return res.status(400).send('Must provide longitude');
 
-        Game.findByIdAndUpdate(id, {beacons: beacons}, (err, game) => {
-            if (err) return next(err);
-            if (!game) return res.status(400).send('Failed to start game');
+            var radius = req.body.radius;
+            var latlng = {lat: req.body.lat, lng: req.body.lng};
+            var numUsers = game.users.length;
 
-            return res.json(game);
-        });
+            // Determine beacons
+            var beacons = generateBeacons(numUsers, radius, latlng);
+
+            // Assign mafia roles
+            var numMafia = Math.round(numUsers/3);
+            var mafAssign = [];
+            var users = game.users;
+            for (var i = 0; i < numMafia; i++) {
+                mafAssign.push(true);
+            }
+            for (var i = 0; i < numUsers - numMafia; i++) {
+                mafAssign.push(false);
+            }
+            shuffle(mafAssign);
+
+            for (var i = 0; i < numUsers; i++) {
+                users[i].mafia = mafAssign[i];
+            }
+            
+            // Determine code start points
+
+            console.log(users);
+            
+            Game.findByIdAndUpdate(id, {beacons: beacons, started: true, users: users}, (err, game) => {
+                if (err) return next(err);
+                if (!game) return res.status(400).send('Failed to start game');
+
+                return res.json(game);
+            });
+        }
+        else return res.status(400).send('Game already started.');
         
         //TODO Send Notifications
-
-
      });
 };
 

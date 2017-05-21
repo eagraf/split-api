@@ -8,7 +8,8 @@ var User = mongoose.model('User', new Schema({
         lat: Number,
         lng: Number,
         symbol: Number
-    }
+    },
+    mafia: false
 }));
 
 module.exports = User;
