@@ -3,7 +3,12 @@ const Schema = mongoose.Schema;
 
 var gameSchema = new Schema({
         name: {type: String, required: true, trim: true},
-        users: {type: [Schema.objectId], required: true, ref: User},
+        joinCode: {type: Number},
+        users: {type: [Schema.objectId], ref: User},
+        beacons: [{
+            lat: Number,
+            lon: Number
+        }],
         startTime: {type: Date}
     },
     {
@@ -16,7 +21,11 @@ var gameSchema = new Schema({
 );
 
 var User = mongoose.model('User', new Schema({
-    name: {type: String, required: true, trim: true}
+    name: {type: String, required: true, trim: true},
+    code: {
+        lat: Number,
+        lon: Number,
+    }
 }));
 
 var Game = mongoose.model('Game', gameSchema);
