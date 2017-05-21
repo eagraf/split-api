@@ -4,6 +4,8 @@ const Schema = mongoose.Schema;
 
 var gameSchema = new Schema({
         name: {type: String, required: true, trim: true},
+        joinCode: {type: Number, unique: true},
+        users: {type: [Schema.objectId], ref: User},
         beacons: [{
             lat: Number,
             lon: Number

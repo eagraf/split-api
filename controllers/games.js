@@ -10,17 +10,20 @@ exports.makeGame = (req, res, next) => {
     if (req.body.name && typeof req.body.name === 'string')
         gameData.name = req.body.name;
 
+    
     // Generate random join code
-    gameData.joinCode = Math.floor(Math.random() * 999999);
+    tryCode(res, gameData);
+};
 
+function tryCode(res, gameData) {
+    gameData.joinCode = Math.floor(Math.random() * 999999);
     var newGame = new Game(gameData);
     newGame.save((err, game) => {
-        if (err) return next(err);
-        if (!game) return res.status('Failed to make game').send(400);
-
-        return res.json(game);
+        if (!err) return res.json(game);
+        if (err.code == 11000) tryCode();
     });
-};
+}
+
 
 // PUT /game/<game_id> {name: new_name}. Not crucial
 exports.updateGame = (req, res, next) => {
@@ -40,6 +43,14 @@ exports.getGame = (req, res, next) => {
 };
 
 exports.startGame = (req, res, next) => {
+    // Determine beacons
+    
+    // Determine code start points
+
+    
+    //TODO Send Notifications
+
+
     return res.send(200);
 };
 
