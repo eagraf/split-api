@@ -12,7 +12,8 @@ var gameSchema = new Schema({
         users: [{}],
         started: false,
         startTime: {type: Date},
-        key: {type: [{}]}
+        key: {type: [{}]},
+        token: {type: String, required: true}
     },
     {
         toObject: {getters: true},

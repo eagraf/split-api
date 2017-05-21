@@ -7,25 +7,29 @@ const User = require('../models/schemas/user');
 var numKeys = 50;
 
 
-// POST /game {name}
+// POST /game {name, token}
 exports.makeGame = (req, res, next) => {
 
     var gameData = {};
 
-    if (req.body.name && typeof req.body.name === 'string')
-        gameData.name = req.body.name;
-
+    gameData.name = req.body.name;
+    gameData.token = req.body.token;
     
     // Generate random join code
-    tryCode(res, gameData);
-};
-
-function tryCode(res, gameData) {
-    gameData.joinCode = Math.floor(Math.random() * 999999);
+    gameData.joinCode = makeJoinCode();
     var newGame = new Game(gameData);
     newGame.save((err, game) => {
         if (!err) return res.json(game);
-        if (err.code == 11000) tryCode(res, gameData);
+        else return next(err);
+    });
+
+};
+
+function makeJoinCode() {
+    joinCode = Math.floor(Math.random() * 999999);
+    game = Game.findOne({joinCode: joinCode}, (err, game) => {
+        if (!game) return joinCode;
+        return makeJoinCode();
     });
 }
 
@@ -47,6 +51,7 @@ exports.getGame = (req, res, next) => {
     });
 };
 
+// PUT /games/:id {radius, lat, lng, token}
 exports.startGame = (req, res, next) => {
 
     var id = req.params.id;
@@ -57,6 +62,9 @@ exports.startGame = (req, res, next) => {
         if (!game) return res.status(404).send('Game not found');
 
         if (!game.started){
+
+            if(game.token !== req.body.token) 
+                return res.status(400).send('Wrong or nonexistent token');
 
             if (!req.body.radius || typeof req.body.radius !== 'number')
                 return res.status(400).send('Must provide a radius');
@@ -112,6 +120,28 @@ exports.startGame = (req, res, next) => {
      });
 };
 
+// PUT /game/:id/users {name, deviceId}
+exports.joinGame = (req, res, next) => {
+    game = Game.findOne({joinCode: req.params.joinCode}, (err, game) => {
+        if (err) return next(err);
+        if (!game) return res.status(404).send('No game with that join code');
+
+        user = new User({name: req.body.name, 
+                         deviceId: req.body.deviceId});
+        user.validate(function (err) {
+            if(err) return next(err);
+
+            game.users.push(user);
+            game.save(function (err, user, _) {
+                if (err) return next(err);
+                res.status(200).json(user);
+            });
+
+        });
+    });
+};
+
+
 
 function generateBeacons(num, radius, latlng) {
     var beacons = [];
@@ -126,7 +156,7 @@ function generateKey (numGood) {
     var key = [];
     for(var i = 0; i < numGood; i++){
         // Random integer key between 0 and numKeys
-        k = {code: getRandInt(0, numKeys)}
+        k = {symbol: getRandInt(0, numKeys)}
         key.push(k);
     }
 
@@ -147,7 +177,6 @@ function generateUserCodes (key, numGood, radius, latlng) {
     return codes;
 }
 
-// PUT /game/:id/users {name, device_id}
 // Generates {lat, lng} point within radius of a center {lat, lng}
 function mkPointInRadius (radius, center) {
     x_off = getRandDist(-radius, radius);
@@ -156,26 +185,6 @@ function mkPointInRadius (radius, center) {
     return haversineOffset(center, offset);
 }
 
-// PUT /game/:id/users {name, deviceId}
-exports.addUser = (req, res, next) => {
-    game = Game.findOne({joinCode: req.params.joinCode}, (err, game) => {
-        if (err) return next(err);
-        if (!game) return res.status(404).send('No game with that join code');
-
-        user = new User({name: req.body.name, 
-                         deviceId: req.body.deviceId});
-        user.validate(function (err) {
-            if(err) return next(err);
-
-            game.users.push(user);
-            game.save(function (err, user, _) {
-                if (err) return next(err);
-                res.status(200).json(user);
-            });
-
-        });
-    });
-};
 
 function getRandDist(min, max) {
     return Math.random() * (max - min) + min;

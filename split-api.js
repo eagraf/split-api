@@ -43,7 +43,7 @@ router.route('/games/:id')
     .get(game.getGame)
     .put(game.startGame)
 router.route('/games/join/:joinCode')
-    .put(game.addUser)
+    .put(game.joinGame)
 
     
 app.use('/', router);
