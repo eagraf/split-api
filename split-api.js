@@ -7,7 +7,11 @@ const bodyParser = require('body-parser');
 const config = require('./models/config');
 
 const auth = require('./controllers/auth');
+<<<<<<< HEAD
 const groups = require('./controllers/groups');
+=======
+const user = require('./controllers/user');
+>>>>>>> master
 
 // http://mongoosejs.com/docs/promises.html
 mongoose.Promise = global.Promise;
@@ -38,7 +42,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // User routes
 router.route('/login')
-    .post(auth.loginUser);
+    .post(auth.loginUser)
+router.route('/users')
+    .post(user.createUser)
+router.route('/users/:id')
+    .get(user.getUserById)
+
+
     
 app.use('/', router);
 
