@@ -12,24 +12,21 @@ exports.makeGame = (req, res, next) => {
 
     var gameData = {};
 
-    gameData.name = req.body.name;
+    if (req.body.name && typeof req.body.name === 'string')
+        gameData.name = req.body.name;
     gameData.token = req.body.token;
+
     
     // Generate random join code
-    gameData.joinCode = makeJoinCode();
+    tryCode(res, gameData);
+};
+
+function tryCode(res, gameData) {
+    gameData.joinCode = Math.floor(Math.random() * 999999);
     var newGame = new Game(gameData);
     newGame.save((err, game) => {
         if (!err) return res.json(game);
-        else return next(err);
-    });
-
-};
-
-function makeJoinCode() {
-    joinCode = Math.floor(Math.random() * 999999);
-    game = Game.findOne({joinCode: joinCode}, (err, game) => {
-        if (!game) return joinCode;
-        return makeJoinCode();
+        if (err.code == 11000) tryCode();
     });
 }
 
@@ -122,6 +119,7 @@ exports.startGame = (req, res, next) => {
 
 // PUT /game/:id/users {name, deviceId}
 exports.joinGame = (req, res, next) => {
+    console.log(req.headers);
     game = Game.findOne({joinCode: req.params.joinCode}, (err, game) => {
         if (err) return next(err);
         if (!game) return res.status(404).send('No game with that join code');
