@@ -4,7 +4,22 @@ const User = require('../models/schemas/user');
 
 // POST /game {name, users:[user1, user2, user3]}
 exports.makeGame = (req, res, next) => {
-    return res.send(200);
+
+    var gameData = {};
+
+    if (req.body.name && typeof req.body.name === 'string')
+        gameData.name = req.body.name;
+
+    // Generate random join code
+    gameData.joinCode = Math.floor(Math.random() * 999999);
+
+    var newGame = new Game(gameData);
+    newGame.save((err, game) => {
+        if (err) return next(err);
+        if (!game) return res.status('Failed to make game').send(400);
+
+        return res.json(game);
+    });
 };
 
 // PUT /game/<game_id> {name: new_name}. Not crucial

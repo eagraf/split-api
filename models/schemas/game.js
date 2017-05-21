@@ -4,6 +4,10 @@ const Schema = mongoose.Schema;
 
 var gameSchema = new Schema({
         name: {type: String, required: true, trim: true},
+        beacons: [{
+            lat: Number,
+            lon: Number
+        }],
         users: {},
         startTime: {type: Date}
     },
