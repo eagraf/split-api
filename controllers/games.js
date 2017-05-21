@@ -4,8 +4,10 @@ const shuffle = require('shuffle-array');
 const Game = require('../models/schemas/game');
 const User = require('../models/schemas/user');
 
+var numKeys = 50;
 
-// POST /game {name, users:[user1, user2, user3]}
+
+// POST /game {name}
 exports.makeGame = (req, res, next) => {
 
     var gameData = {};
@@ -23,7 +25,7 @@ function tryCode(res, gameData) {
     var newGame = new Game(gameData);
     newGame.save((err, game) => {
         if (!err) return res.json(game);
-        if (err.code == 11000) tryCode();
+        if (err.code == 11000) tryCode(res, gameData);
     });
 }
 
@@ -66,31 +68,38 @@ exports.startGame = (req, res, next) => {
             var radius = req.body.radius;
             var latlng = {lat: req.body.lat, lng: req.body.lng};
             var numUsers = game.users.length;
+            var numMafia = Math.round(numUsers/3);
+            var numGood = numUsers - numMafia;
 
             // Determine beacons
             var beacons = generateBeacons(numUsers, radius, latlng);
 
-            // Assign mafia roles
-            var numMafia = Math.round(numUsers/3);
+            // Determine code start points
+            var key = generateKey(numGood);
+
+            // [{code: 12, location: {lat:lat, lng:lng}, ...]
+            var userCodes = generateUserCodes(key, numGood, radius, latlng);
+
+            // Assign mafia roles. Maf _initially_ get a random code
             var mafAssign = [];
             var users = game.users;
             for (var i = 0; i < numMafia; i++) {
-                mafAssign.push(true);
+                mafAssign.push({mafStatus: true, code: userCodes[getRandInt(0, numGood)]});
             }
-            for (var i = 0; i < numUsers - numMafia; i++) {
-                mafAssign.push(false);
+            for (var i = 0; i < numGood; i++) {
+                mafAssign.push({mafStatus: false, code: userCodes[i]});
             }
             shuffle(mafAssign);
 
             for (var i = 0; i < numUsers; i++) {
-                users[i].mafia = mafAssign[i];
+                var userInfo = mafAssign[i];
+                users[i].mafia = userInfo.mafStatus;
+                users[i].code = userInfo.code; 
             }
             
-            // Determine code start points
-
-            console.log(users);
-            
-            Game.findByIdAndUpdate(id, {beacons: beacons, started: true, users: users}, (err, game) => {
+            gameUpdate = {beacons: beacons, started: true, 
+                          users: users, key: key}
+            Game.findByIdAndUpdate(id, gameUpdate, (err, game) => {
                 if (err) return next(err);
                 if (!game) return res.status(400).send('Failed to start game');
 
@@ -111,6 +120,31 @@ function generateBeacons(num, radius, latlng) {
     }
 
     return beacons;
+}
+
+function generateKey (numGood) {
+    var key = [];
+    for(var i = 0; i < numGood; i++){
+        // Random integer key between 0 and numKeys
+        k = {code: getRandInt(0, numKeys)}
+        key.push(k);
+    }
+
+    shuffle(key);
+
+    for(var i = 0; i < numGood; i++){
+        key[i].location = i;
+    }
+
+    return key;
+}
+
+function generateUserCodes (key, numGood, radius, latlng) {
+    var codes = key;
+    for(var i = 0; i < numGood; i++){
+        codes[i].location = mkPointInRadius(radius, latlng)
+    }
+    return codes;
 }
 
 // PUT /game/:id/users {name, device_id}
@@ -147,4 +181,7 @@ function getRandDist(min, max) {
     return Math.random() * (max - min) + min;
 }
 
+function getRandInt(min, max) {
+    return Math.floor(getRandDist(0, getRandDist(min, max)));
+}
 

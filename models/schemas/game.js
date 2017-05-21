@@ -11,7 +11,8 @@ var gameSchema = new Schema({
         }],
         users: [{}],
         started: false,
-        startTime: {type: Date}
+        startTime: {type: Date},
+        key: {type: [{}]}
     },
     {
         toObject: {getters: true},
