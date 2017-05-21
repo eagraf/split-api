@@ -54,6 +54,16 @@ exports.startGame = (req, res, next) => {
     return res.send(200);
 };
 
+
+function generateBeacons(num, radius, lat, lng) {
+    var beacons = [];
+    for (var i = 0; i < num; i++) {
+        beacons.push(mkPointinRadius(radius, {lat, lng}));
+    }
+
+    return beacons;
+}
+
 // PUT /game/:id/users {name, device_id}
 exports.addUser = (req, res, next) => {
     game = Game.findById(req.params('id'), (err, game) => {

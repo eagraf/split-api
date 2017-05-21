@@ -8,7 +8,7 @@ var gameSchema = new Schema({
         users: {type: [Schema.objectId], ref: User},
         beacons: [{
             lat: Number,
-            lon: Number
+            lng: Number
         }],
         users: {},
         startTime: {type: Date}
